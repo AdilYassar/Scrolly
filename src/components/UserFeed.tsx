@@ -118,7 +118,7 @@ const OptimizedPostImage = memo(({ imageUri, postId }) => {
 });
 
 // Memoized Post Item component
-const PostItem = memo(({ item, onLike, onComment, onShare }) => {
+const PostItem = memo(({ item, onLike, onComment, onShare, currentUserId, likingPost }) => {
   const authorName = useMemo(() => {
     return item.author?.name || item.author?.username || 'Unknown User';
   }, [item.author]);
@@ -135,6 +135,11 @@ const PostItem = memo(({ item, onLike, onComment, onShare }) => {
     return item.comments?.length || 0;
   }, [item.comments]);
 
+  // Check if current user has liked this post
+  const isLikedByUser = useMemo(() => {
+    return item.likes?.some(like => like.toString() === currentUserId?.toString()) || false;
+  }, [item.likes, currentUserId]);
+
   const handleLike = useCallback(() => {
     onLike(item._id);
   }, [item._id, onLike]);
@@ -146,6 +151,8 @@ const PostItem = memo(({ item, onLike, onComment, onShare }) => {
   const handleShare = useCallback(() => {
     onShare(item._id);
   }, [item._id, onShare]);
+
+  const isCurrentPostLiking = likingPost === item._id;
 
   return (
     <View style={styles.postContainer}>
@@ -177,13 +184,25 @@ const PostItem = memo(({ item, onLike, onComment, onShare }) => {
       {/* Actions */}
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
-          style={styles.actionButton}
+          style={[
+            styles.actionButton,
+            isLikedByUser && styles.likedButton,
+            isCurrentPostLiking && styles.likingButton
+          ]}
           onPress={handleLike}
+          disabled={isCurrentPostLiking}
           activeOpacity={0.7}
         >
-          <Text style={styles.actionText}>
-            👍 Like ({likesCount})
-          </Text>
+          {isCurrentPostLiking ? (
+            <ActivityIndicator size="small" color="#007bff" />
+          ) : (
+            <Text style={[
+              styles.actionText,
+              isLikedByUser && styles.likedText
+            ]}>
+              {isLikedByUser ? '❤️' : '👍'} Like ({likesCount})
+            </Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.actionButton}
@@ -214,6 +233,11 @@ const UserFeed = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [likingPost, setLikingPost] = useState(null); // Track which post is being liked
+  
+  // For demo purposes, using a hardcoded user ID
+  // In a real app, this would come from authentication context or async storage
+  const [currentUserId] = useState('60d0fe4f5311236168a109ca'); // Replace with actual user ID
 
   console.log('🏗️ UserFeed component render');
   console.log('📊 Current state - feed length:', feed.length);
@@ -303,17 +327,88 @@ const UserFeed = () => {
     fetchFeed();
   }, [fetchFeed]);
 
-  const handleLike = useCallback((postId) => {
-    console.log('Like post:', postId);
-    // Optimistic update
-    setFeed(prevFeed => 
-      prevFeed.map(post => 
-        post._id === postId 
-          ? { ...post, likes: [...(post.likes || []), 'current_user'] }
-          : post
-      )
-    );
-  }, []);
+  const handleLike = useCallback(async (postId) => {
+    console.log('🔥 Like post clicked:', postId);
+    console.log('👤 Current user ID:', currentUserId);
+    
+    if (!currentUserId) {
+      Alert.alert('Error', 'User ID not found. Please log in again.');
+      return;
+    }
+
+    // Set loading state for this specific post
+    setLikingPost(postId);
+    
+    try {
+      console.log('📡 Making like API request...');
+      console.log('📊 Requesting like for post ID:', postId);
+      const response = await fetch(
+        `https://001d-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/posts/like/${postId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          body: JSON.stringify({
+            userId: currentUserId
+          }),
+        }
+      );
+
+      console.log('📊 Like response status:', response.status);
+      console.log('📊 Like response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('❌ Like response error text:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Like API response:', result);
+      console.log('✅ Is liked:', result.isLiked);
+      console.log('✅ Likes count:', result.likesCount);
+
+      // Update the feed with the new like status
+      setFeed(prevFeed => 
+        prevFeed.map(post => {
+          if (post._id === postId) {
+            let updatedLikes;
+            if (result.isLiked) {
+              // Add current user to likes if not already present
+              if (!post.likes.some(like => like.toString() === currentUserId.toString())) {
+                updatedLikes = [...post.likes, currentUserId];
+              } else {
+                updatedLikes = post.likes;
+              }
+            } else {
+              // Remove current user from likes
+              updatedLikes = post.likes.filter(like => like.toString() !== currentUserId.toString());
+            }
+            
+            return {
+              ...post,
+              likes: updatedLikes
+            };
+          }
+          return post;
+        })
+      );
+
+      console.log('✅ Feed updated successfully');
+      
+    } catch (error) {
+      console.error('💥 Error liking post:', error);
+      console.error('💥 Error message:', error.message);
+      Alert.alert('Error', 'Failed to like post. Please try again.');
+      
+      // Optionally revert optimistic update here if you had one
+    } finally {
+      setLikingPost(null);
+      console.log('🏁 Like operation completed');
+    }
+  }, [currentUserId]);
 
   const handleComment = useCallback((postId) => {
     console.log('Comment on post:', postId);
@@ -333,9 +428,11 @@ const UserFeed = () => {
         onLike={handleLike}
         onComment={handleComment}
         onShare={handleShare}
+        currentUserId={currentUserId}
+        likingPost={likingPost}
       />
     );
-  }, [handleLike, handleComment, handleShare]);
+  }, [handleLike, handleComment, handleShare, currentUserId, likingPost]);
 
   const keyExtractor = useCallback((item) => item._id, []);
 
@@ -516,11 +613,24 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 8,
     borderRadius: 6,
+    minHeight: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  likedButton: {
+    backgroundColor: '#ffe6e6',
+  },
+  likingButton: {
+    backgroundColor: '#f0f0f0',
   },
   actionText: {
     color: '#007bff',
     fontSize: 14,
     fontWeight: '500',
+  },
+  likedText: {
+    color: '#e74c3c',
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
