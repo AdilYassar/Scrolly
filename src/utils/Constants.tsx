@@ -1,6 +1,6 @@
 const Colors = {
-  primaryGradientStart: '#A8EBFF', // Replace with actual hex from the gradient
-  primaryGradientEnd: '#D9F6C3', // Replace with actual hex from the gradient
+  primaryGradientStart: '#4BA1BBFF', // Replace with actual hex from the gradient
+  primaryGradientEnd: '#F0F9BDFF', // Replace with actual hex from the gradient
   textPrimary: '#1A1A1A', // Replace with text color code
   textSecondary: '#767676', // Replace with secondary text color
   backgroundLight: '#F5F5F5', // Replace with background color

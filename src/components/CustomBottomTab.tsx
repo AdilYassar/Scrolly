@@ -156,7 +156,7 @@ const CustomBottomTab = () => {
       }
 
       const response = await fetch(
-        'https://001d-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/posts/create',
+        'https://4a60-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/posts/create',
         {
           method: 'POST',
           headers,

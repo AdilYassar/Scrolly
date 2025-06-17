@@ -7,9 +7,12 @@ import {
   StyleSheet,
   Alert,
   Image,
+  ScrollView,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import * as ImagePicker from 'react-native-image-picker';
 import { navigate } from '../utils/Navigation';
+import Colors from '../utils/Constants'; // Adjust the path as per your project structure
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
@@ -21,32 +24,17 @@ const RegisterScreen = () => {
   const handleImagePicker = async () => {
     const result = await ImagePicker.launchImageLibrary({
       mediaType: 'photo',
-      includeBase64: true, // This is important to get base64 data
-      quality: 0.7, // Reduce quality to manage size
+      includeBase64: true,
+      quality: 0.7,
     });
 
     if (result.assets && result.assets.length > 0) {
       const selectedImage = result.assets[0];
       setImage(selectedImage);
-      
-      console.log('Selected Image:', {
-        type: selectedImage.type,
-        fileName: selectedImage.fileName,
-        hasBase64: !!selectedImage.base64
-      });
-      
-      // Create base64 string with proper format
-      // Handle different possible MIME type formats
-      let mimeType = selectedImage.type;
-      if (!mimeType || mimeType === 'image') {
-        // Fallback to jpeg if type is not properly set
-        mimeType = 'image/jpeg';
-      }
-      
+
+      let mimeType = selectedImage.type || 'image/jpeg';
       const base64String = `data:${mimeType};base64,${selectedImage.base64}`;
       setImageBase64(base64String);
-      
-      console.log('Base64 string created:', base64String.substring(0, 50) + '...');
     }
   };
 
@@ -56,39 +44,29 @@ const RegisterScreen = () => {
       return;
     }
 
-    console.log('Registering with data:', {
-      name,
-      email,
-      hasProfilePic: !!imageBase64,
-      profilePicLength: imageBase64.length
-    });
-
     const requestBody = {
       name,
       email,
       password,
-      profilePic: imageBase64, // Send as base64 string
+      profilePic: imageBase64,
     };
 
     try {
       const response = await fetch(
-        'https://001d-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/auth/register',
+        'https://4a60-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/auth/register',
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json', // Changed to JSON
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify(requestBody), // Send as JSON
+          body: JSON.stringify(requestBody),
         }
       );
 
       const data = await response.json();
-      console.log('Server response:', data);
 
       if (response.ok) {
         Alert.alert('Success', 'User registered successfully!');
-        console.log('User Data:', data.user);
-        // Navigate to LoginScreen
         navigate('LoginScreen');
       } else {
         Alert.alert('Error', data.message || 'Failed to register.');
@@ -100,98 +78,125 @@ const RegisterScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Register</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        placeholderTextColor="#888"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#888"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      {image && (
-        <Image source={{ uri: image.uri }} style={styles.imagePreview} />
-      )}
-      <TouchableOpacity style={styles.imagePicker} onPress={handleImagePicker}>
-        <Text style={styles.imagePickerText}>
-          {image ? 'Change Profile Picture' : 'Choose Profile Picture'}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
-      </TouchableOpacity>
-    </View>
+    <LinearGradient
+      colors={[Colors.primaryGradientStart, Colors.primaryGradientEnd]}
+      style={styles.gradientContainer}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Sign Up</Text>
+        <View style={styles.formGroup}>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePicker}>
+            {image ? (
+              <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+            ) : (
+              <Text style={styles.imagePickerText}>Add Profile Picture</Text>
+            )}
+          </TouchableOpacity>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor={Colors.textSecondary}
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            placeholderTextColor={Colors.textSecondary}
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor={Colors.textSecondary}
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+          <LinearGradient
+            colors={[Colors.primaryGradientStart, Colors.primaryGradientEnd]}
+            style={styles.buttonGradient}
+          >
+            <Text style={styles.buttonText}>Create Account</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  gradientContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
+  },
+  container: {
+    flexGrow: 1,
     padding: 20,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
+    color: Colors.textPrimary,
+    marginBottom: 30,
+    marginTop: 150,
+  },
+  formGroup: {
+    width: '100%',
+    alignItems: 'center',
     marginBottom: 20,
-    color: '#333',
   },
   input: {
     width: '100%',
     padding: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: Colors.borderColor,
+    borderRadius: 10,
     marginBottom: 15,
-    backgroundColor: '#fff',
-    color: '#333',
-  },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 10,
+    backgroundColor: Colors.backgroundWhite,
+    fontSize: 16,
+    color: Colors.textPrimary,
   },
   imagePicker: {
-    backgroundColor: '#4A90E2',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 15,
+    width: 120,
+    height: 120,
+    backgroundColor: Colors.backgroundLight,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: Colors.primaryGradientStart,
   },
   imagePickerText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: Colors.primaryGradientStart,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  imagePreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   button: {
     width: '100%',
-    padding: 15,
-    backgroundColor: '#4A90E2',
+    borderRadius: 8,
+  },
+  buttonGradient: {
+    paddingVertical: 15,
     borderRadius: 8,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: Colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
 
