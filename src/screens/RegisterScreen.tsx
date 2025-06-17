@@ -11,21 +11,42 @@ import {
 import * as ImagePicker from 'react-native-image-picker';
 import { navigate } from '../utils/Navigation';
 
-
 const RegisterScreen = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [image, setImage] = useState(null);
-
+  const [imageBase64, setImageBase64] = useState('');
 
   const handleImagePicker = async () => {
     const result = await ImagePicker.launchImageLibrary({
       mediaType: 'photo',
+      includeBase64: true, // This is important to get base64 data
+      quality: 0.7, // Reduce quality to manage size
     });
 
     if (result.assets && result.assets.length > 0) {
-      setImage(result.assets[0]);
+      const selectedImage = result.assets[0];
+      setImage(selectedImage);
+      
+      console.log('Selected Image:', {
+        type: selectedImage.type,
+        fileName: selectedImage.fileName,
+        hasBase64: !!selectedImage.base64
+      });
+      
+      // Create base64 string with proper format
+      // Handle different possible MIME type formats
+      let mimeType = selectedImage.type;
+      if (!mimeType || mimeType === 'image') {
+        // Fallback to jpeg if type is not properly set
+        mimeType = 'image/jpeg';
+      }
+      
+      const base64String = `data:${mimeType};base64,${selectedImage.base64}`;
+      setImageBase64(base64String);
+      
+      console.log('Base64 string created:', base64String.substring(0, 50) + '...');
     }
   };
 
@@ -35,20 +56,19 @@ const RegisterScreen = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('password', password);
-    formData.append(
-      'profilePic',
-      image
-        ? {
-            uri: image.uri,
-            type: image.type,
-            name: image.fileName,
-          }
-        : ''
-    );
+    console.log('Registering with data:', {
+      name,
+      email,
+      hasProfilePic: !!imageBase64,
+      profilePicLength: imageBase64.length
+    });
+
+    const requestBody = {
+      name,
+      email,
+      password,
+      profilePic: imageBase64, // Send as base64 string
+    };
 
     try {
       const response = await fetch(
@@ -56,13 +76,14 @@ const RegisterScreen = () => {
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json', // Changed to JSON
           },
-          body: formData,
+          body: JSON.stringify(requestBody), // Send as JSON
         }
       );
 
       const data = await response.json();
+      console.log('Server response:', data);
 
       if (response.ok) {
         Alert.alert('Success', 'User registered successfully!');
@@ -73,7 +94,7 @@ const RegisterScreen = () => {
         Alert.alert('Error', data.message || 'Failed to register.');
       }
     } catch (error) {
-      console.error(error);
+      console.error('Registration error:', error);
       Alert.alert('Error', 'An error occurred. Please try again.');
     }
   };
@@ -108,7 +129,9 @@ const RegisterScreen = () => {
         <Image source={{ uri: image.uri }} style={styles.imagePreview} />
       )}
       <TouchableOpacity style={styles.imagePicker} onPress={handleImagePicker}>
-        <Text style={styles.imagePickerText}>Choose Profile Picture</Text>
+        <Text style={styles.imagePickerText}>
+          {image ? 'Change Profile Picture' : 'Choose Profile Picture'}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Register</Text>

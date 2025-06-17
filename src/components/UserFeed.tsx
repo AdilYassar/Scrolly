@@ -9,7 +9,9 @@ import {
   StyleSheet, 
   Alert, 
   RefreshControl,
-  Dimensions 
+  Dimensions,
+  Modal,
+  TextInput
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -114,6 +116,139 @@ const OptimizedPostImage = memo(({ imageUri, postId }) => {
         cache={isBase64Image(imageUri) ? "default" : "force-cache"}
       />
     </View>
+  );
+});
+
+// Comment Modal Component
+const CommentModal = memo(({ visible, onClose, postId, currentUserId, onCommentAdded }) => {
+  const [commentText, setCommentText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitComment = useCallback(async () => {
+    if (!commentText.trim()) {
+      Alert.alert('Error', 'Please enter a comment');
+      return;
+    }
+
+    if (!currentUserId) {
+      Alert.alert('Error', 'User ID not found. Please log in again.');
+      return;
+    }
+
+    setSubmitting(true);
+    
+    try {
+      console.log('💬 Submitting comment for post:', postId);
+      console.log('💬 Comment text:', commentText);
+      console.log('💬 User ID:', currentUserId);
+
+      const response = await fetch(
+        `https://001d-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/posts/comment/${postId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          body: JSON.stringify({
+            text: commentText.trim(),
+            userId: currentUserId
+          }),
+        }
+      );
+
+      console.log('📊 Comment response status:', response.status);
+      console.log('📊 Comment response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('❌ Comment response error text:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Comment API response:', result);
+
+      // Clear the input and close modal
+      setCommentText('');
+      onClose();
+      
+      // Notify parent component about the new comment
+      if (onCommentAdded) {
+        onCommentAdded(postId, result.comment);
+      }
+
+      Alert.alert('Success', 'Comment added successfully!');
+      
+    } catch (error) {
+      console.error('💥 Error adding comment:', error);
+      console.error('💥 Error message:', error.message);
+      Alert.alert('Error', 'Failed to add comment. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [commentText, currentUserId, postId, onClose, onCommentAdded]);
+
+  const handleCancel = useCallback(() => {
+    setCommentText('');
+    onClose();
+  }, [onClose]);
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Add Comment</Text>
+            <TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <TextInput
+            style={styles.commentInput}
+            placeholder="Write your comment..."
+            value={commentText}
+            onChangeText={setCommentText}
+            multiline={true}
+            numberOfLines={4}
+            maxLength={500}
+            autoFocus={true}
+            textAlignVertical="top"
+          />
+          
+          <View style={styles.modalActions}>
+            <TouchableOpacity 
+              style={styles.cancelButton} 
+              onPress={handleCancel}
+              disabled={submitting}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[
+                styles.submitButton,
+                (!commentText.trim() || submitting) && styles.submitButtonDisabled
+              ]} 
+              onPress={handleSubmitComment}
+              disabled={!commentText.trim() || submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Post Comment</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 });
 
@@ -234,6 +369,8 @@ const UserFeed = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [likingPost, setLikingPost] = useState(null); // Track which post is being liked
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
   
   // For demo purposes, using a hardcoded user ID
   // In a real app, this would come from authentication context or async storage
@@ -411,8 +548,31 @@ const UserFeed = () => {
   }, [currentUserId]);
 
   const handleComment = useCallback((postId) => {
-    console.log('Comment on post:', postId);
-    // Navigate to comment screen or show comment modal
+    console.log('💬 Comment on post:', postId);
+    setSelectedPostId(postId);
+    setCommentModalVisible(true);
+  }, []);
+
+  const handleCommentAdded = useCallback((postId, newComment) => {
+    console.log('✅ Comment added successfully:', newComment);
+    
+    // Update the feed to increment comment count
+    setFeed(prevFeed => 
+      prevFeed.map(post => {
+        if (post._id === postId) {
+          return {
+            ...post,
+            comments: [...(post.comments || []), newComment._id]
+          };
+        }
+        return post;
+      })
+    );
+  }, []);
+
+  const handleCloseCommentModal = useCallback(() => {
+    setCommentModalVisible(false);
+    setSelectedPostId(null);
   }, []);
 
   const handleShare = useCallback((postId) => {
@@ -483,32 +643,43 @@ const UserFeed = () => {
   console.log('📋 Rendering FlatList with', feed.length, 'items');
 
   return (
-    <FlatList
-      data={feed}
-      keyExtractor={keyExtractor}
-      renderItem={renderItem}
-      contentContainerStyle={styles.feedContainer}
-      refreshControl={refreshControl}
-      ListEmptyComponent={ListEmptyComponent}
-      showsVerticalScrollIndicator={false}
-      // Performance optimizations
-      removeClippedSubviews={true}
-      maxToRenderPerBatch={5}
-      windowSize={10}
-      initialNumToRender={3}
-      getItemLayout={getItemLayout}
-      // Additional performance optimizations
-      updateCellsBatchingPeriod={100}
-      maintainVisibleContentPosition={{
-        minIndexForVisible: 0,
-        autoscrollToTopThreshold: 10,
-      }}
-      // Improve scroll performance
-      scrollEventThrottle={16}
-      onEndReachedThreshold={0.5}
-      // Memory optimization
-      legacyImplementation={false}
-    />
+    <>
+      <FlatList
+        data={feed}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        contentContainerStyle={styles.feedContainer}
+        refreshControl={refreshControl}
+        ListEmptyComponent={ListEmptyComponent}
+        showsVerticalScrollIndicator={false}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        windowSize={10}
+        initialNumToRender={3}
+        getItemLayout={getItemLayout}
+        // Additional performance optimizations
+        updateCellsBatchingPeriod={100}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+          autoscrollToTopThreshold: 10,
+        }}
+        // Improve scroll performance
+        scrollEventThrottle={16}
+        onEndReachedThreshold={0.5}
+        // Memory optimization
+        legacyImplementation={false}
+      />
+      
+      {/* Comment Modal */}
+      <CommentModal
+        visible={commentModalVisible}
+        onClose={handleCloseCommentModal}
+        postId={selectedPostId}
+        currentUserId={currentUserId}
+        onCommentAdded={handleCommentAdded}
+      />
+    </>
   );
 };
 
@@ -663,6 +834,88 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
+  },
+  // Comment Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 15,
+    marginBottom: 20,
+    fontSize: 16,
+    minHeight: 100,
+    maxHeight: 150,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#007bff',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#007bff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  submitButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: '#007bff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

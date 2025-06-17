@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import CustomHeader from '../components/CustomHeader';
 import CustomBottomTab from '../components/CustomBottomTab';
 import UserFeed from '../components/UserFeed';
@@ -12,6 +12,7 @@ const Dashboard = () => {
       
       {/* Scrollable Content*/}
       <View style={styles.content}>
+        
         <UserFeed />
       </View> 
       
