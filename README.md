@@ -51,3 +51,8 @@ Backend: Built with Express.js, using MongoDB as the database.
 API Integration: Smooth communication between frontend and backend via API calls.
 
 Secure Authentication: Token-based authentication ensures data security
+
+
+
+
+demo of the app can be seen through this link : https://drive.google.com/file/d/1dWyYBQVzJrBNG2IxMhArkX4YAoVfsLB5/view?usp=sharing
