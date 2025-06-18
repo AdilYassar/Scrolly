@@ -51,9 +51,12 @@ Backend: Built with Express.js, using MongoDB as the database.
 API Integration: Smooth communication between frontend and backend via API calls.
 
 Secure Authentication: Token-based authentication ensures data security
+**screenShots:**
+![WhatsApp Image 2025-06-19 at 04 22 18_f4b4e1e7](https://github.com/user-attachments/assets/02ae024f-6a74-4f8f-ab8b-22559ab41c30)
 
 
 
 
-demo of the app can be seen through this link : https://drive.google.com/file/d/1dWyYBQVzJrBNG2IxMhArkX4YAoVfsLB5/view?usp=sharing
+
+**demo of the app can be seen through this link :**  https://drive.google.com/file/d/1YPBvT98rohGSeqTIPdZKPlZ5rcLK1trZ/view?usp=sharing
 
