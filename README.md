@@ -21,6 +21,8 @@ Backend functionality is powered by Express and MongoDB.
 3. Feed Page
 Displays a list of all posts fetched via an API GET request.
 
+Display Story like instagram and snapchat stories
+
 Each post includes:
 
 Image (if available).
