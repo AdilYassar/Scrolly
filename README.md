@@ -60,7 +60,7 @@ Secure Authentication: Token-based authentication ensures data security
 ![WhatsApp Image 2025-06-19 at 04 32 32_6a103f63](https://github.com/user-attachments/assets/efea1bcd-f44f-4447-8db6-4fb908fd88d6)
 ![WhatsApp Image 2025-06-19 at 04 32 32_6b463c9d](https://github.com/user-attachments/assets/ce082daf-3afb-41bf-943b-68460ff407ab)
 ![WhatsApp Image 2025-06-19 at 04 32 32_f8733294](https://github.com/user-attachments/assets/0f829c93-d35b-4fed-8659-57d7d1e2dcf4)
-![WhatsApp Image 2025-06-19 at 04 32 33_3cec6ea7](https://github.com/user-attachments/assets/e4d0254f-5c4e-4137-b2bf-7671160b1661)
+
 
 
 
