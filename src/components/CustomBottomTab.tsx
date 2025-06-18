@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '../utils/config';
 
 // AsyncStorage utility functions
 const getUserProfile = async () => {
@@ -156,7 +157,7 @@ const CustomBottomTab = () => {
       }
 
       const response = await fetch(
-        'https://4a60-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/posts/create',
+        `${BASE_URL}/api/posts/create`,
         {
           method: 'POST',
           headers,

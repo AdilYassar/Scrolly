@@ -14,12 +14,13 @@ import {
   StatusBar
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '../utils/config';
 
 const { width, height } = Dimensions.get('window');
 const ITEM_SIZE = (width - 60) / 3; // 3 columns with padding
 
 // Your server base URL - update this to match your actual server URL
-const SERVER_BASE_URL = 'https://4a60-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app';
+const SERVER_BASE_URL = 'https://ad51-2400-adc5-124-2500-50d-7516-cb61-fa1c.ngrok-free.app';
 
 // Default profile image (you can replace this with your own asset)
 const DEFAULT_PROFILE_IMAGE = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face';
@@ -105,7 +106,7 @@ const Profile = () => {
       }
 
       const response = await fetch(
-        `${SERVER_BASE_URL}/api/profile/${storedProfile.userId}`,
+        `${BASE_URL}/api/profile/${storedProfile.userId}`,
         {
           method: 'GET',
           headers: {

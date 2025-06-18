@@ -13,6 +13,7 @@ import {
   Modal,
   TextInput
 } from 'react-native';
+import { BASE_URL } from '../utils/config';
 
 const { width } = Dimensions.get('window');
 
@@ -143,7 +144,7 @@ const CommentModal = memo(({ visible, onClose, postId, currentUserId, onCommentA
       console.log('💬 User ID:', currentUserId);
 
       const response = await fetch(
-        `https://4a60-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/posts/comment/${postId}`,
+        `${BASE_URL}/api/posts/comment/${postId}`,
         {
           method: 'POST',
           headers: {
@@ -390,7 +391,7 @@ const UserFeed = () => {
       console.log('📡 Making fetch request to API...');
       
       const response = await fetch(
-        'https://4a60-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/posts/feed',
+        `${BASE_URL}/api/posts/feed`,
         {
           method: 'GET',
           headers: {
@@ -480,7 +481,7 @@ const UserFeed = () => {
       console.log('📡 Making like API request...');
       console.log('📊 Requesting like for post ID:', postId);
       const response = await fetch(
-        `https://4a60-2400-adc5-124-2500-ddec-56ec-287f-f5e3.ngrok-free.app/api/posts/like/${postId}`,
+        `${BASE_URL}/api/posts/like/${postId}`,
         {
           method: 'POST',
           headers: {

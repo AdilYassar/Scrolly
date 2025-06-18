@@ -1,0 +1,1 @@
+export const BASE_URL='https://ad51-2400-adc5-124-2500-50d-7516-cb61-fa1c.ngrok-free.app';
